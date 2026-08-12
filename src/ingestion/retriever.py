@@ -13,10 +13,15 @@ from src.ingestion.build_knowledge_base import (
 )
 
 
-def load_retriever(k: int = 4):
+def load_retriever(k: int = 6):
     """
     Loads the persisted Chroma store and returns a retriever.
     Must be run after build_knowledge_base.py has created the store at least once.
+
+    k=6 (was 4): a slightly wider net gives borderline-relevant chunks --
+    like the right section for a misspelled or oddly-phrased question --
+    more chance of making the cutoff. Costs a little more context per
+    request, worth it for noticeably fewer retrieval misses.
     """
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     vector_store = Chroma(

@@ -4,17 +4,22 @@ pending review, approved, or released to the team.
 
 This is deliberately separate from logging_utils.py's scorecards.jsonl:
 - scorecards.jsonl: an immutable, append-only history of every grading run
-  ever performed (for dispute resolution, never edited).
+  ever performed (for dispute resolution -- never edited).
 - review_queue.db: the current, editable state of each team's submission
   (one row per team, updated as it moves through the workflow).
 
 Uses SQLite instead of a single JSON file specifically for concurrency
-safety: judges can act through the API at the same moment
+safety: the previous version read the whole file, changed one entry, and
+wrote the whole file back -- fine for one person running commands, but
+unsafe once multiple judges can act through the API at the same moment
 (two near-simultaneous approvals could silently overwrite each other).
 SQLite handles concurrent writes correctly on its own, with no extra
 library needed (it's part of Python's standard library) and no separate
 database server to run.
 
+Every public function keeps the exact same name and signature as the
+JSON-file version, so nothing else in the project (main.py, api/main.py,
+report.py) needed to change when this was rewritten.
 """
 
 import json
@@ -156,3 +161,4 @@ def list_by_status(status: str) -> list[dict]:
         return [_row_to_entry(row) for row in rows]
     finally:
         conn.close()
+

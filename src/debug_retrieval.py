@@ -19,7 +19,7 @@ def main():
         return
 
     question = sys.argv[1]
-    retriever = load_retriever(k=4)
+    retriever = load_retriever(k=6)
     docs = retriever.invoke(question)
 
     print(f"Question: {question}\n")

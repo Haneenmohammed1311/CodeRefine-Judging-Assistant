@@ -12,7 +12,7 @@ Run this once after any edit to the rules document:
 import re
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
@@ -128,7 +128,7 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
     Uses PyMuPDF (fitz) -- fast and reliable for text-based PDFs like a
     rules document (not scanned images, which would need OCR instead).
     """
-    doc = fitz.open(pdf_path)
+    doc = pymupdf.open(pdf_path)
     full_text = "\n".join(page.get_text("text") for page in doc)
     doc.close()
     return full_text
