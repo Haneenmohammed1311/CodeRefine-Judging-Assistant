@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeRefine — IEEE VICTORIS 4.0</title>
+<title>CodeRefine  IEEE VICTORIS 4.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --blue-deep:#0B2E5C;      /* primary — IEEE-style deep blue */
+    --blue-deep:#0B2E5C;      /* primary  IEEE-style deep blue */
     --blue-navy:#122B4A;      /* secondary / header */
-    --blue-mid:#1D6FB8;       /* accent — links, buttons */
+    --blue-mid:#1D6FB8;       /* accent  links, buttons */
     --blue-pale:#EAF1F8;      /* tinted backgrounds */
     --gray-bg:#F6F7F9;        /* page background */
     --gray-line:#DDE2E8;      /* hairline borders */
     --gray-line-soft:#E9ECF0;
     --charcoal:#20242C;       /* body text */
     --charcoal-soft:#565D68;  /* secondary text */
-    --yellow:#F2B807;         /* sparing accent — status/rank only */
+    --yellow:#F2B807;         /* sparing accent  status/rank only */
     --green:#1E7A46;
     --red:#B23A2E;
     --white:#FFFFFF;
@@ -353,7 +353,7 @@
 
 <section class="masthead">
   <div class="wrap">
-    <p class="eyebrow">System Design Track — Automated Review Assistant</p>
+    <p class="eyebrow">System Design Track  Automated Review Assistant</p>
     <h1>Submission review for the CodeRefine finals</h1>
     <p class="lead">Every submission is read by a review agent against the fixed judging rubric, then checked and approved by a judge before a team sees any result. Scores are never released automatically.</p>
     <div class="fact-row">
@@ -418,7 +418,7 @@
         <!-- Report -->
         <div class="panel">
           <div class="panel-head">
-            <h3>Your report — freelancieee</h3>
+            <h3>Your report  freelancieee</h3>
             <button class="btn ghost small" onclick="window.print()">Download PDF</button>
           </div>
           <table class="scorecard">
@@ -456,14 +456,14 @@
                 <td><span class="conf-tag conf-high">High</span></td>
                 <td class="score-cell" style="text-align:right;">18 / 20</td>
               </tr>
-            </tbody>
+          </tbody>
           </table>
           <div class="total-row">
             <span style="font-size:12.5px; color:var(--charcoal-soft);">Total (excl. bonus)</span>
             <span class="n">38 / 100</span>
           </div>
           <div class="panel-body" style="padding-top:14px;">
-            <div class="notes-box"><strong>Judge's notes —</strong> Reviewed and approved. Strong depth on the technical trade-offs; the data model and API contract need to be written out explicitly next time — a diagram alone isn't enough for those two criteria.</div>
+            <div class="notes-box"><strong>Judge's notes </strong> Reviewed and approved. Strong depth on the technical trade-offs; the data model and API contract need to be written out explicitly next time  a diagram alone isn't enough for those two criteria.</div>
           </div>
         </div>
 
@@ -551,8 +551,8 @@
 
 <footer class="site">
   <div class="wrap">
-    <span>IEEE Mansoura Student Branch — VICTORIS 4.0, powered by NTRA</span>
-    <span>Review assistant drafts, judges decide — all decisions final per competition rules.</span>
+    <span>IEEE Mansoura Student Branch  VICTORIS 4.0, powered by NTRA</span>
+    <span>Review assistant drafts, judges decide  all decisions final per competition rules.</span>
   </div>
 </footer>
 
@@ -570,7 +570,7 @@
     </div>
   </div>
   <div class="chat-body" id="chat-body">
-    <div class="msg bot">Hi — ask me anything about eligibility, phases, or the judging criteria.</div>
+    <div class="msg bot">Hi  ask me anything about eligibility, phases, or the judging criteria.</div>
     <div class="msg user">How many members can be on a team?</div>
     <div class="msg bot">Teams may consist of 1 to 3 members, with one mandatory Team Leader.</div>
   </div>
@@ -618,7 +618,7 @@
       });
       if (!res.ok) {
         errorEl.style.display = 'block';
-        errorEl.textContent = res.status === 429 ? 'Too many attempts — wait a minute and try again.' : 'Incorrect password.';
+        errorEl.textContent = res.status === 429 ? 'Too many attempts  wait a minute and try again.' : 'Incorrect password.';
         return;
       }
       const data = await res.json();
@@ -629,7 +629,7 @@
       document.getElementById(`${role}-content`).style.display = 'block';
     } catch (err) {
       errorEl.style.display = 'block';
-      errorEl.textContent = 'Network error — please try again.';
+      errorEl.textContent = 'Network error  please try again.';
     }
   }
 
@@ -652,11 +652,11 @@
       if (res.ok) {
         btn.textContent = 'Submitted ✓';
       } else {
-        btn.textContent = 'Failed — check the link';
+        btn.textContent = 'Failed  check the link';
         btn.disabled = false;
       }
     } catch (err) {
-      btn.textContent = 'Network error — try again';
+      btn.textContent = 'Network error  try again';
       btn.disabled = false;
     }
   }
@@ -713,7 +713,7 @@
       body: JSON.stringify({ team_name: teamName, notes }),
     });
     if (res.ok) renderJudgeDetail(await res.json());
-    else alert('Could not approve — check the console for details.');
+    else alert('Could not approve  check the console for details.');
   }
 
   async function handleRelease(){
@@ -724,7 +724,7 @@
       body: JSON.stringify({ team_name: teamName }),
     });
     if (res.ok) renderJudgeDetail(await res.json());
-    else alert('Could not release — has it been approved yet?');
+    else alert('Could not release  has it been approved yet?');
   }
 
   // ---------- Chatbot ----------
@@ -768,7 +768,7 @@
     } catch (err) {
       const botMsg = document.createElement('div');
       botMsg.className = 'msg bot';
-      botMsg.textContent = 'Network error — the assistant may be starting up (Hugging Face Spaces can take a moment on first request).';
+      botMsg.textContent = 'Network error  the assistant may be starting up (Hugging Face Spaces can take a moment on first request).';
       body.appendChild(botMsg);
     }
   }
