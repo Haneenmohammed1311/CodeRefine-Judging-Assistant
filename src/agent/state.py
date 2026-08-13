@@ -4,7 +4,8 @@ The shared state that flows through every step of the grading agent
 one grading run: each step reads from it and adds to it.
 """
 
-from typing import TypedDict, Optional
+from typing import Optional
+from typing_extensions import TypedDict
 
 
 class CriterionEvidence(TypedDict):

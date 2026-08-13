@@ -18,6 +18,21 @@ from dotenv import load_dotenv
 load_dotenv()  # reads .env so GROQ_API_KEY / GITHUB_TOKEN are available
 
 
+def run_practice(team: str, repo: str) -> None:
+    from src.agent.graph import give_practice_feedback
+    from src.logging_utils import log_practice_feedback
+
+    result = give_practice_feedback(team_name=team, repo_url=repo)
+
+    print(f"Practice feedback for '{team}' -- no score, no judge review:\n")
+    for item in result["feedback"]:
+        print(f"  {item['criterion']} ({item['confidence']} confidence)")
+        print(f"    {item['feedback']}")
+
+    log_practice_feedback(team_name=team, repo_url=repo, feedback=result["feedback"])
+    print(f"\nSeen only by '{team}' -- never enters the judge review queue.")
+
+
 def run_grade(team: str, repo: str) -> None:
     from src.agent.graph import grade_repo
     from src.logging_utils import log_scorecard
@@ -83,7 +98,7 @@ def run_chat() -> None:
     import uuid
     from src.chatbot.chatbot import answer_question
 
-    # One thread_id for this whole session -- every question you type here
+    # One thread_id for this whole session every question you type here
     # shares memory with every question before it, until you exit.
     thread_id = str(uuid.uuid4())
 
@@ -99,9 +114,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="CodeRefine judging & support system")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    grade_parser = subparsers.add_parser("grade", help="Grade one team's repo")
+    grade_parser = subparsers.add_parser("grade", help="Grade one team's repo (official, needs judge approval)")
     grade_parser.add_argument("--team", required=True)
     grade_parser.add_argument("--repo", required=True)
+
+    practice_parser = subparsers.add_parser("practice", help="Give practice feedback (no score, no judge review)")
+    practice_parser.add_argument("--team", required=True)
+    practice_parser.add_argument("--repo", required=True)
 
     subparsers.add_parser("review", help="List teams pending judge review")
 
@@ -121,6 +140,8 @@ def main() -> None:
 
     if args.command == "grade":
         run_grade(args.team, args.repo)
+    elif args.command == "practice":
+        run_practice(args.team, args.repo)
     elif args.command == "review":
         run_review()
     elif args.command == "approve":

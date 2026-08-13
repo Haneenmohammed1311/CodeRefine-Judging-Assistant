@@ -32,7 +32,7 @@ def grade_repo(team_name: str, repo_url: str) -> dict:
     """
     The one function the rest of the project calls to grade a repo.
     Returns the final state, including final_scorecard. This is the
-    OFFICIAL grading path -- always goes through judge review before a
+    OFFICIAL grading path always goes through judge review before a
     team sees anything (see src/agent/review_queue.py).
     """
     app = build_grading_graph()
@@ -51,9 +51,9 @@ def grade_repo(team_name: str, repo_url: str) -> dict:
 
 def build_practice_graph():
     """
-    Deliberately only two steps -- gather, then feedback. There is no
+    Deliberately only two steps gather, then feedback. There is no
     scoring node in this graph at all, not a format/verify pair with
-    scoring "turned off" -- the graph structurally cannot produce a
+    scoring "turned off" the graph structurally cannot produce a
     score, because no node here knows how to.
     """
     graph = StateGraph(PracticeFeedbackState)
@@ -70,7 +70,7 @@ def build_practice_graph():
 
 def give_practice_feedback(team_name: str, repo_url: str) -> dict:
     """
-    The practice-trial path. Returns feedback directly -- no review
+    The practice-trial path. Returns feedback directly no review
     queue, no judge approval step, by design (this is what makes it a
     practice trial rather than an official grade). Teams see this
     immediately; nothing here is ever shown to a judge for approval.

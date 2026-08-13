@@ -1,9 +1,6 @@
 """
-The API layer -- wraps everything already built in main.py, review_queue.py,
-report.py, and chatbot.py as real HTTP endpoints a website can call. No
-grading/judging LOGIC lives in this file; it only translates HTTP requests
-into calls to functions that already existed and already worked from the
-command line.
+The API layer wraps everything already built in main.py, review_queue.py,
+report.py, and chatbot.py as real HTTP endpoints a website can call.
 """
 
 from dotenv import load_dotenv
@@ -28,10 +25,6 @@ from src.api.auth import (
 
 app = FastAPI(title="CodeRefine API")
 
-# Rate limiting: caps how many requests one visitor can make per minute,
-# regardless of whether they have a valid session or not. This matters
-# even with proper login -- it stops someone from hammering /login trying
-# to guess the password, or spamming /submissions.
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -47,7 +40,7 @@ app.add_middleware(
 
 @app.get("/")
 def serve_website():
-    """Serves the website itself at the root address -- one Space, one URL for both."""
+    """Serves the website itself at the root address one Space, one URL for both."""
     return FileResponse("web/index.html")
 
 
@@ -93,6 +86,21 @@ def _run_grading_job(team_name: str, repo_url: str) -> None:
     )
 
 
+def _run_practice_job(team_name: str, repo_url: str) -> None:
+    """
+    Runs in the background, same pattern as official grading. Note what's
+    NOT here: no review_queue call at all this path never touches the
+    judge-approval system.
+    """
+    from src.agent.graph import give_practice_feedback
+    from src.logging_utils import log_practice_feedback
+    from src.agent.practice_store import complete_practice
+
+    result = give_practice_feedback(team_name=team_name, repo_url=repo_url)
+    log_practice_feedback(team_name=team_name, repo_url=repo_url, feedback=result["feedback"])
+    complete_practice(team_name, result["feedback"])
+
+
 @app.post("/login/team")
 @limiter.limit("5/minute")  # slows down anyone trying to guess the password
 def login_team(request: Request, req: LoginRequest):
@@ -113,12 +121,42 @@ def login_judge(request: Request, req: LoginRequest):
 @limiter.limit("10/minute")
 def submit(request: Request, req: SubmissionRequest, background_tasks: BackgroundTasks):
     """
-    A team submits their repo. Responds immediately with "received" 
+    A team submits their repo. Responds immediately with "received"
     grading happens afterward in the background, since it can take real
     time (an LLM call, not an instant lookup).
     """
     background_tasks.add_task(_run_grading_job, req.team_name, req.repo_url)
     return {"status": "received", "team_name": req.team_name}
+
+
+@app.post("/practice", dependencies=[Depends(require_team_session)])
+@limiter.limit("10/minute")
+def submit_practice(request: Request, req: SubmissionRequest, background_tasks: BackgroundTasks):
+    """
+    A practice trial no score, no judge review, visible to the team
+    the moment it's done. Structurally separate from /submissions above:
+    this endpoint never calls anything in review_queue.py.
+    """
+    from src.agent.practice_store import start_practice
+
+    start_practice(req.team_name, req.repo_url)
+    background_tasks.add_task(_run_practice_job, req.team_name, req.repo_url)
+    return {"status": "received", "team_name": req.team_name}
+
+
+@app.get("/practice/{team_name}")
+def get_practice_result(team_name: str):
+    """
+    Public no login needed, same as checking status. Practice feedback
+    was never gated behind judge approval in the first place, so there's
+    nothing to protect here the way official scores are protected.
+    """
+    from src.agent.practice_store import get_practice
+
+    entry = get_practice(team_name)
+    if entry is None:
+        return {"status": "not_found"}
+    return entry
 
 
 @app.get("/status/{team_name}")
@@ -143,7 +181,7 @@ def get_submission(team_name: str):
 
 @app.get("/report/{team_name}")
 def get_report(team_name: str):
-    """Public: returns the report ONLY if released -- report.py itself enforces that."""
+    """Public: returns the report ONLY if released report.py itself enforces that."""
     from src.agent.report import generate_team_report
     return {"report": generate_team_report(team_name)}
 
@@ -185,5 +223,5 @@ def chat(request: Request, req: ChatRequest):
 
 @app.get("/health")
 def health():
-    """No auth needed -- just confirms the API is actually running."""
+    """No auth needed just confirms the API is actually running."""
     return {"status": "ok"}
