@@ -18,6 +18,8 @@ Team submits repo link
  Team sees the report
 ```
 
+Practice trials are a separate, simpler path: gather, then feedback. No score is ever produced, and no judge is involved at any point. This is a structurally different pipeline from official grading, not a variant of it, so a practice trial can never be mistaken for a real grade.
+
 The chatbot is separate from all of this it just answers rule questions from the competition's rules document, with no connection to grading.
 
 ## Folder map
@@ -33,7 +35,7 @@ The chatbot is separate from all of this it just answers rule questions from the
 | `data/` | The rules document (and the generated knowledge base, once built) |
 | `logs/` | Audit log of every grading run, question log, review queue database |
 
-Each of the `src/` subfolders has its own README explaining what every file in it does — read this one for the overall picture, then the folder-level ones when you're working on a specific piece.
+Each of the `src/` subfolders has its own README explaining what every file in it does read this one for the overall picture, then the folder-level ones when you're working on a specific piece.
 
 
 
@@ -43,7 +45,7 @@ Each of the `src/` subfolders has its own README explaining what every file in i
 # 1. Install dependencies
 poetry install
 
-# 2. Set up secrets (see above)
+# 2. Set up secrets 
 cp .env
 # edit .env now
 
@@ -57,11 +59,11 @@ poetry run python -m src.main approve --team "Test Team" --notes "..."
 poetry run python -m src.main release --team "Test Team"
 poetry run python -m src.main report --team "Test Team"
 
-# 5. Try the chatbot
+# 5. Try a practice trial (no score, no judge review)
+poetry run python -m src.main practice --team "Test Team" --repo https://github.com/owner/repo
+
+# 6. Try the chatbot
 poetry run python -m src.main chat
 
-# 6. Run the actual web API + website together
-poetry run uvicorn src.api.main:app --reload
-# then open http://localhost:8000 in a browser
 ```
 
