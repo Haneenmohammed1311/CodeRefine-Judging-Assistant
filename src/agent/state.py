@@ -18,11 +18,39 @@ class CriterionEvidence(TypedDict):
 
 class CriterionScorecard(TypedDict):
     """The final, judge-facing result for a single rubric criterion."""
-    criterion: str            # e.g. "Data Model"
+    criterion: str            # like : "Data Model"
     score_percent: int        # 0 to that criterion's weight_percent, see rubric.py
     justification: str        # short written reasoning
     evidence: list[CriterionEvidence]  # resolved by verify_node from cited evidence_ids
-    confidence: str           # "high" | "medium" | "low" -- per-criterion, not global
+    confidence: str           # "high" | "medium" | "low"  per-criterion, not global
+
+
+class CriterionFeedback(TypedDict):
+    """
+    Improvement feedback for one criterion, used ONLY in practice trials.
+    Deliberately has no score field at all practice trials never
+    produce a number, by design, so there's no risk of a practice result
+    being mistaken for an official grade anywhere downstream.
+    """
+    criterion: str
+    feedback: str                      # what to improve, not a grade
+    evidence: list[CriterionEvidence]
+    confidence: str
+
+
+class PracticeFeedbackState(TypedDict):
+    """
+    State for a practice-trial run: gather evidence (same as official
+    grading), then produce feedback instead of a scorecard. No approve/
+    release step exists for this path at all it's a structurally
+    separate, simpler pipeline from GradingState above, not a variant of
+    it, specifically so practice feedback can never accidentally behave
+    like an official grade.
+    """
+    team_name: str
+    repo_url: str
+    raw_notes: Optional[list[CriterionEvidence]]
+    feedback: Optional[list[CriterionFeedback]]
 
 
 class GradingState(TypedDict):
