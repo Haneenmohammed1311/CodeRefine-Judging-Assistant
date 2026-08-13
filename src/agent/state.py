@@ -11,7 +11,7 @@ class CriterionEvidence(TypedDict):
     """One piece of evidence the agent found while inspecting the repo."""
     id: int            # stable numeric id, used by format_node to cite this note
     file_path: str
-    line_range: str  # e.g. "22-45"
+    line_range: str  # Like: "22-45"
     excerpt: str      # short excerpt supporting the observation
     observation: str  # what this evidence shows, in plain language
 
