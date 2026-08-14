@@ -18,12 +18,12 @@ import time
 from fastapi import Header, HTTPException
 
 # In-memory session store: {token: (role, expires_at_timestamp)}.
-# Fine at this scale (one small competition, one running process) --
-# would need a shared store (e.g. Redis) if this ever ran as multiple
+# Fine at this scale (one small competition, one running process) 
+# would need a shared store if this ever ran as multiple
 # server instances behind a load balancer.
 _sessions: dict[str, tuple[str, float]] = {}
 
-SESSION_LIFETIME_SECONDS = 5 * 60 * 60  # 5 hours
+SESSION_LIFETIME_SECONDS = 4 * 60 * 60  # 4 hours
 
 
 def create_session(role: str) -> str:

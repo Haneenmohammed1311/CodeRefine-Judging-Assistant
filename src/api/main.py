@@ -6,7 +6,7 @@ report.py, and chatbot.py as real HTTP endpoints a website can call.
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -116,32 +116,47 @@ def login_judge(request: Request, req: LoginRequest):
         raise HTTPException(status_code=401, detail="Incorrect password.")
     return {"session_token": create_session("judge")}
 
+@app.post("/login/judge")
+@limiter.limit("5/minute")
+def login_judge(request: Request, req: LoginRequest):
+    if not check_login_password(req.password, "judge"):
+        raise HTTPException(status_code=401, detail="Incorrect password.")
+    return {"session_token": create_session("judge")}
+
+
 
 @app.post("/submissions", dependencies=[Depends(require_team_session)])
 @limiter.limit("10/minute")
-def submit(request: Request, req: SubmissionRequest, background_tasks: BackgroundTasks):
+def submit(request: Request, req: SubmissionRequest):
     """
-    A team submits their repo. Responds immediately with "received"
-    grading happens afterward in the background, since it can take real
-    time (an LLM call, not an instant lookup).
+    A team submits their repo. Responds immediately with "received" 
+    grading happens afterward, one team at a time, through the job queue
+    (src/api/job_queue.py). This is deliberately NOT run concurrently:
+    each grading run makes 2 LLM calls, so several teams submitting close
+    together would otherwise fire simultaneously and blow past Groq's
+    per-minute token limit.
     """
-    background_tasks.add_task(_run_grading_job, req.team_name, req.repo_url)
-    return {"status": "received", "team_name": req.team_name}
+    from src.api.job_queue import enqueue_job, queue_length
+
+    enqueue_job(_run_grading_job, req.team_name, req.repo_url)
+    return {"status": "received", "team_name": req.team_name, "position_in_queue": queue_length()}
 
 
 @app.post("/practice", dependencies=[Depends(require_team_session)])
 @limiter.limit("10/minute")
-def submit_practice(request: Request, req: SubmissionRequest, background_tasks: BackgroundTasks):
+def submit_practice(request: Request, req: SubmissionRequest):
     """
     A practice trial no score, no judge review, visible to the team
     the moment it's done. Structurally separate from /submissions above:
     this endpoint never calls anything in review_queue.py.
     """
     from src.agent.practice_store import start_practice
+    from src.api.job_queue import enqueue_job, queue_length
 
     start_practice(req.team_name, req.repo_url)
-    background_tasks.add_task(_run_practice_job, req.team_name, req.repo_url)
-    return {"status": "received", "team_name": req.team_name}
+    enqueue_job(_run_practice_job, req.team_name, req.repo_url)
+    return {"status": "received", "team_name": req.team_name, "position_in_queue": queue_length()}
+
 
 
 @app.get("/practice/{team_name}")
@@ -157,6 +172,7 @@ def get_practice_result(team_name: str):
     if entry is None:
         return {"status": "not_found"}
     return entry
+
 
 
 @app.get("/status/{team_name}")
@@ -178,6 +194,22 @@ def get_submission(team_name: str):
         raise HTTPException(status_code=404, detail=f"No submission found for '{team_name}'.")
     return entry
 
+@app.get("/failures", dependencies=[Depends(require_judge_session)])
+def list_failures():
+    """
+    Judge-only: every submission that failed silently in the background
+    (Like: a name collision, a repo that couldn't be reached). Without
+    this, a team whose submission failed would just look like they never
+    submitted at all this is where to check if a team says "I
+    submitted but nothing's showing up."
+    """
+    import json
+    from src.api.job_queue import FAILURE_LOG
+
+    if not FAILURE_LOG.exists():
+        return {"failures": []}
+    with FAILURE_LOG.open(encoding="utf-8") as f:
+        return {"failures": [json.loads(line) for line in f if line.strip()]}
 
 @app.get("/report/{team_name}")
 def get_report(team_name: str):
@@ -202,7 +234,6 @@ def approve_submission(req: ApproveRequest):
         raise HTTPException(status_code=400, detail=str(e))
     return entry
 
-
 @app.post("/release", dependencies=[Depends(require_judge_session)])
 def release_submission(req: ReleaseRequest):
     from src.agent.review_queue import release
@@ -223,5 +254,5 @@ def chat(request: Request, req: ChatRequest):
 
 @app.get("/health")
 def health():
-    """No auth needed just confirms the API is actually running."""
+    """No auth needed -- just confirms the API is actually running."""
     return {"status": "ok"}
