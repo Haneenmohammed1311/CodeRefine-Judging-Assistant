@@ -8,23 +8,23 @@ graph decides the sequence.
 """
 
 from langgraph.graph import StateGraph, END
-
+ 
 from src.agent.state import GradingState, PracticeFeedbackState
 from src.agent.nodes import gather_node, format_node, verify_node, feedback_node
-
+ 
 
 def build_grading_graph():
     graph = StateGraph(GradingState)
-
+ 
     graph.add_node("gather", gather_node)
     graph.add_node("format", format_node)
     graph.add_node("verify", verify_node)
-
+ 
     graph.set_entry_point("gather")
     graph.add_edge("gather", "format")
     graph.add_edge("format", "verify")
     graph.add_edge("verify", END)
-
+ 
     return graph.compile()
 
 
@@ -57,14 +57,14 @@ def build_practice_graph():
     score, because no node here knows how to.
     """
     graph = StateGraph(PracticeFeedbackState)
-
+ 
     graph.add_node("gather", gather_node)
     graph.add_node("feedback", feedback_node)
-
+ 
     graph.set_entry_point("gather")
     graph.add_edge("gather", "feedback")
     graph.add_edge("feedback", END)
-
+ 
     return graph.compile()
 
 
@@ -83,3 +83,41 @@ def give_practice_feedback(team_name: str, repo_url: str) -> dict:
         "feedback": None,
     }
     return app.invoke(initial_state)
+
+def submit_attempt(team_name: str, repo_url: str) -> dict:
+    """
+    The single entry point a team actually submits through no choice
+    between "practice" and "official," the system decides automatically
+    based on which attempt number this is for this team.
+ 
+    Attempts 1 and 2: routes to the practice pipeline (feedback only, no
+    score, no judge). Attempt 3: routes to the official pipeline (scored,
+    goes to judge review). Attempt 4 and beyond: refused outright.
+ 
+    Returns a dict with an "attempt_type" key ("practice" or "official")
+    so the caller (the API layer) knows which store to save the result
+    into, without needing its own copy of this counting logic.
+    """
+    from src.agent.attempt_tracker import (
+        get_attempt_count,
+        record_attempt,
+        FINAL_ATTEMPT_NUMBER,
+        MAX_ATTEMPTS,
+        NoAttemptsRemainingError,
+    )
+ 
+    current_count = get_attempt_count(team_name)
+    if current_count >= MAX_ATTEMPTS:
+        raise NoAttemptsRemainingError(
+            f"'{team_name}' has already used all {MAX_ATTEMPTS} submission attempts."
+        )
+ 
+    attempt_number = record_attempt(team_name)
+ 
+    if attempt_number < FINAL_ATTEMPT_NUMBER:
+        result = give_practice_feedback(team_name, repo_url)
+        return {"attempt_type": "practice", "attempt_number": attempt_number, **result}
+    else:
+        result = grade_repo(team_name, repo_url)
+        return {"attempt_type": "official", "attempt_number": attempt_number, **result}
+ 
