@@ -18,9 +18,76 @@ Team submits repo link
  Team sees the report
 ```
 
-Practice trials are a separate, simpler path: gather, then feedback. No score is ever produced, and no judge is involved at any point. This is a structurally different pipeline from official grading, not a variant of it, so a practice trial can never be mistaken for a real grade.
+## The three roles, step by step from the beginning
 
-The chatbot is separate from all of this it just answers rule questions from the competition's rules document, with no connection to grading.
+### Team, from the beginning
+
+```
+Opens the website
+     v
+Logs in with the team password
+     v
+Submits a repo link, the same single action every time
+     v
+The system checks how many times this team has already submitted
+     v
+Attempt 1 or 2: agent gathers evidence, writes feedback with no
+score, team sees it right away, no judge involved. Team can edit
+their repo and submit again.
+     v
+Attempt 3, the last one: agent gathers evidence, writes a scored
+draft, checks its own evidence, lands in the judge queue as pending
+review, team waits, sees nothing yet.
+     v
+Judge approves (can add bonus points), then separately releases.
+     v
+Team's report becomes visible only now.
+     v
+A fourth submission attempt is refused.
+```
+
+### Judge, from the beginning
+
+```
+Opens the website
+     v
+Logs in with the judge password
+     v
+Sees the queue of everything pending review
+     v
+Opens one team, sees the full scorecard, the evidence behind each
+score, a confidence label per criterion, and any verification flags
+     v
+Writes a comment
+     v
+Approves
+     v
+Separately releases, possibly after approving several teams first
+     v
+Team can now see their result
+```
+
+A judge can also check a separate failures list, showing any submission that broke silently in the background.
+
+### Chatbot, from the beginning
+
+```
+Anyone clicks the chat icon
+     v
+Types a question, sent with a thread id so the conversation is
+remembered
+     v
+Backend searches the rules document for related content
+     v
+Each result gets a second check: does this actually answer the
+question, not just sound related
+     v
+Only checked content is used to answer, following a strict rule
+about official facts versus general explanation versus real
+procedures that are never guessed at
+     v
+Answer appears, question and answer are logged
+```
 
 ## Folder map
 

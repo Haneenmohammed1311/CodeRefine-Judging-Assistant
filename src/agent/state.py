@@ -7,12 +7,11 @@ one grading run: each step reads from it and adds to it.
 from typing import Optional
 from typing_extensions import TypedDict
 
-
 class CriterionEvidence(TypedDict):
     """One piece of evidence the agent found while inspecting the repo."""
     id: int            # stable numeric id, used by format_node to cite this note
     file_path: str
-    line_range: str  # Like: "22-45"
+    line_range: str   # "22-45"
     excerpt: str      # short excerpt supporting the observation
     observation: str  # what this evidence shows, in plain language
 
