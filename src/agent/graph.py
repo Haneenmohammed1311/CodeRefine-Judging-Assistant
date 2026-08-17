@@ -1,10 +1,7 @@
 """
 Wires gather -> format -> verify into one runnable LangGraph flow.
 
-This file is deliberately small: it doesn't contain any grading logic
-itself (that's in nodes.py) it only describes the ORDER things happen
-in. That separation is the LangGraph pattern: nodes do the work, the
-graph decides the sequence.
+It only describes the ORDER things happen in.
 """
 
 from langgraph.graph import StateGraph, END
@@ -86,14 +83,13 @@ def give_practice_feedback(team_name: str, repo_url: str) -> dict:
 
 def submit_attempt(team_name: str, repo_url: str) -> dict:
     """
-    The single entry point a team actually submits through no choice
-    between "practice" and "official," the system decides automatically
+    The system decides automatically
     based on which attempt number this is for this team.
- 
+
     Attempts 1 and 2: routes to the practice pipeline (feedback only, no
     score, no judge). Attempt 3: routes to the official pipeline (scored,
     goes to judge review). Attempt 4 and beyond: refused outright.
- 
+
     Returns a dict with an "attempt_type" key ("practice" or "official")
     so the caller (the API layer) knows which store to save the result
     into, without needing its own copy of this counting logic.
@@ -105,19 +101,18 @@ def submit_attempt(team_name: str, repo_url: str) -> dict:
         MAX_ATTEMPTS,
         NoAttemptsRemainingError,
     )
- 
+
     current_count = get_attempt_count(team_name)
     if current_count >= MAX_ATTEMPTS:
         raise NoAttemptsRemainingError(
             f"'{team_name}' has already used all {MAX_ATTEMPTS} submission attempts."
         )
- 
+
     attempt_number = record_attempt(team_name)
- 
+
     if attempt_number < FINAL_ATTEMPT_NUMBER:
         result = give_practice_feedback(team_name, repo_url)
         return {"attempt_type": "practice", "attempt_number": attempt_number, **result}
     else:
         result = grade_repo(team_name, repo_url)
         return {"attempt_type": "official", "attempt_number": attempt_number, **result}
- 
