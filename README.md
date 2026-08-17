@@ -17,6 +17,9 @@ Team submits repo link
         ↓
  Team sees the report
 ```
+Practice trials are a separate, simpler path: gather, then feedback. No score is ever produced, and no judge is involved at any point. This is a structurally different pipeline from official grading, not a variant of it, so a practice trial can never be mistaken for a real grade.
+
+The chatbot is separate from all of this. It just answers rule questions from the competition's rules document, with no connection to grading.
 
 ## The three roles, step by step from the beginning
 
@@ -119,18 +122,29 @@ cp .env
 # 3. Build the chatbot's knowledge base
 poetry run python -m src.ingestion.build_knowledge_base
 
-# 4. Try the grading agent on one team
-poetry run python -m src.main grade --team "Test Team" --repo https://github.com/owner/repo
+# 4. Submit the same team 3 times in a row, to see all 3 attempts play out
+# attempts 1 and 2 give automatic feedback, no score, no judge involved
+poetry run python -m src.main submit --team "Test Team" --repo https://github.com/owner/repo
+poetry run python -m src.main submit --team "Test Team" --repo https://github.com/owner/repo
+# attempt 3 is the real, judge reviewed one
+poetry run python -m src.main submit --team "Test Team" --repo https://github.com/owner/repo
 poetry run python -m src.main review
-poetry run python -m src.main approve --team "Test Team" --notes "..."
+poetry run python -m src.main approve --team "Test Team" --notes "..." --bonus 5
 poetry run python -m src.main release --team "Test Team"
 poetry run python -m src.main report --team "Test Team"
 
-# 5. Try a practice trial (no score, no judge review)
-poetry run python -m src.main practice --team "Test Team" --repo https://github.com/owner/repo
-
-# 6. Try the chatbot
+# 5. Try the chatbot
 poetry run python -m src.main chat
 
+# 6. Run the actual web API and website together
+poetry run uvicorn src.api.main:app --reload
+
+# 7. See the graph structure as an image, instead of only in text
+poetry run python -m src.visualize_graphs
+# saves logs/grading_graph.png, logs/practice_graph.png, logs/chatbot_graph.png
 ```
 
+
+## Deploying it
+
+See the Dockerfile at the project root. It packages everything, backend and website together, into one container that can run on Render, or any other Docker-capable host. The port is configurable via a `PORT` environment variable, so no code change is needed for a different host's requirements.

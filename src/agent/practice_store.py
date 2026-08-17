@@ -12,7 +12,6 @@ from pathlib import Path
 
 DB_PATH = Path("logs/practice_feedback.db")
 
-
 def _get_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH, timeout=10)
@@ -26,25 +25,19 @@ def _get_connection() -> sqlite3.Connection:
     """)
     return conn
 
-
-def start_practice(team_name: str, repo_url: str) -> None:
+def complete_practice(team_name: str, repo_url: str, feedback: list) -> None:
+    """
+    Saves finished practice feedback. Uses INSERT OR REPLACE rather than
+    UPDATE, since nothing creates a placeholder row ahead of time in the
+    unified submission flow (src/agent/graph.py's submit_attempt) an
+    UPDATE alone would silently affect zero rows and the feedback would
+    never actually get saved.
+    """
     conn = _get_connection()
     try:
         conn.execute(
-            "INSERT OR REPLACE INTO practice_feedback (team_name, repo_url, feedback, status) VALUES (?, ?, NULL, 'pending')",
-            (team_name, repo_url),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def complete_practice(team_name: str, feedback: list) -> None:
-    conn = _get_connection()
-    try:
-        conn.execute(
-            "UPDATE practice_feedback SET feedback = ?, status = 'done' WHERE team_name = ?",
-            (json.dumps(feedback), team_name),
+            "INSERT OR REPLACE INTO practice_feedback (team_name, repo_url, feedback, status) VALUES (?, ?, ?, 'done')",
+            (team_name, repo_url, json.dumps(feedback)),
         )
         conn.commit()
     finally:
@@ -69,3 +62,4 @@ def get_practice(team_name: str) -> dict | None:
         }
     finally:
         conn.close()
+

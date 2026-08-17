@@ -1,5 +1,5 @@
 """
-Generates the report a TEAM actually sees -- built from the queue entry,
+Generates the report a TEAM actually sees built from the queue entry,
 and only for entries that have been explicitly released. This is the
 "here's your grade, here's why, here's how to improve" document.
 
@@ -24,28 +24,32 @@ def generate_team_report(team_name: str) -> str:
             f"(current status: {entry['status']})."
         )
 
-    lines = [f"# CodeRefine Results — {team_name}", ""]
+    lines = [f"# CodeRefine Results, {team_name}", ""]
 
     weight_by_criterion = {r["criterion"]: r["weight_percent"] for r in RUBRIC}
-    total_percent = sum(item.get("score_percent", 0) for item in entry["scorecard"])
-    lines.append(f"**Total score:** {total_percent} / 100 (plus any bonus, see below)\n")
+    base_total = sum(item.get("score_percent", 0) for item in entry["scorecard"])
+    bonus = entry.get("bonus_percent", 0)
+    grand_total = base_total + bonus
+
+    lines.append(f"**Total score:** {grand_total} / 100 ({base_total} base plus {bonus} bonus)\n")
 
     for item in entry["scorecard"]:
         max_for_this = weight_by_criterion.get(item["criterion"], "?")
         lines.append(f"## {item['criterion']}: {item.get('score_percent', 0)} / {max_for_this}")
-        lines.append(f"{item['justification']}")
+        lines.append(f"{item.get('justification', 'No justification recorded.')}")
         if item.get("confidence") == "low":
             lines.append(
-                "\n_Note: this criterion had limited supporting evidence during review -- "
+                "\n_Note: this criterion had limited supporting evidence during review, "
                 "if you believe this score doesn't reflect your submission, please reach "
                 "out to the organizers._"
             )
         lines.append("")
 
-    lines.append(
-        f"_Bonus (up to {BONUS_MAX_PERCENT} points) is assessed directly by the judge "
-        "and is not included in the total above unless noted in the judge's notes._\n"
-    )
+    if bonus > 0:
+        lines.append(f"## Bonus: {bonus} / {BONUS_MAX_PERCENT}")
+        lines.append("Awarded directly by the judge.\n")
+    else:
+        lines.append(f"_No bonus (up to {BONUS_MAX_PERCENT} points possible) was awarded for this submission._\n")
 
     if entry.get("judge_notes"):
         lines.append("## Judge's notes")

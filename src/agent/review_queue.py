@@ -146,7 +146,13 @@ def approve(team_name: str, judge_notes: str = "", edited_scorecard: list | None
     can optionally override the agent's scorecard entirely (edited_scorecard)
     the agent's output is a draft, the judge always has final say, per
     the competition's own rules that judges' decisions are final.
+    
+    bonus_percent (0-10): the Bonus criterion is deliberately scored ONLY
+    by the judge, never by the agent
     """
+    if not (0 <= bonus_percent <= 10):
+        raise ValueError(f"bonus_percent must be between 0 and 10, got {bonus_percent}.")
+
     conn = _get_connection()
     try:
         existing = conn.execute(
@@ -154,13 +160,13 @@ def approve(team_name: str, judge_notes: str = "", edited_scorecard: list | None
         ).fetchone()
         if existing is None:
             raise ValueError(f"No pending entry for team '{team_name}'.")
- 
+
         scorecard_json = json.dumps(edited_scorecard) if edited_scorecard is not None else existing[0]
         conn.execute(
             """UPDATE submissions
-               SET scorecard = ?, judge_notes = ?, status = 'approved', reviewed_at = ?
+               SET scorecard = ?, judge_notes = ?, status = 'approved', reviewed_at = ?, bonus_percent = ?
                WHERE team_name = ?""",
-            (scorecard_json, judge_notes, datetime.now(timezone.utc).isoformat(), team_name),
+            (scorecard_json, judge_notes, datetime.now(timezone.utc).isoformat(), bonus_percent, team_name),
         )
         conn.commit()
         return get(team_name)
