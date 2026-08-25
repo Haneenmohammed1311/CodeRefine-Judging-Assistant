@@ -85,13 +85,13 @@ class SubmissionCollisionError(Exception):
 
 
 def add_pending(team_name: str, repo_url: str, final_scorecard: list, verification_notes: str) -> None:
-    """Called right after the agent finishes grading a team status starts as 'pending_review'."""
+    """Called right after the agent finishes grading a team -- status starts as 'pending_review'."""
     conn = _get_connection()
     try:
         existing = conn.execute(
             "SELECT repo_url, status FROM submissions WHERE team_name = ?", (team_name,)
         ).fetchone()
- 
+
         if existing is not None:
             existing_repo_url, existing_status = existing
             if existing_status in ("approved", "released"):
@@ -111,7 +111,7 @@ def add_pending(team_name: str, repo_url: str, final_scorecard: list, verificati
                     f"legitimate resubmission, or two different teams "
                     f"sharing the same name -- worth a judge double-checking."
                 )
- 
+
         conn.execute(
             """INSERT OR REPLACE INTO submissions
                (team_name, repo_url, scorecard, verification_notes, status, judge_notes, graded_at, reviewed_at)
@@ -131,7 +131,7 @@ def get(team_name: str) -> dict | None:
     conn = _get_connection()
     try:
         row = conn.execute(
-            "SELECT team_name, repo_url, scorecard, verification_notes, status, judge_notes, graded_at, reviewed_at "
+            "SELECT team_name, repo_url, scorecard, verification_notes, status, judge_notes, graded_at, reviewed_at, bonus_percent "
             "FROM submissions WHERE team_name = ?",
             (team_name,),
         ).fetchone()
@@ -187,7 +187,7 @@ def release(team_name: str) -> dict:
             raise ValueError(f"No entry for team '{team_name}'.")
         if row[0] != "approved":
             raise ValueError(f"Team '{team_name}' must be approved before release (current status: {row[0]}).")
- 
+
         conn.execute("UPDATE submissions SET status = 'released' WHERE team_name = ?", (team_name,))
         conn.commit()
         return get(team_name)
@@ -199,7 +199,7 @@ def list_by_status(status: str) -> list[dict]:
     conn = _get_connection()
     try:
         rows = conn.execute(
-            "SELECT team_name, repo_url, scorecard, verification_notes, status, judge_notes, graded_at, reviewed_at "
+            "SELECT team_name, repo_url, scorecard, verification_notes, status, judge_notes, graded_at, reviewed_at, bonus_percent "
             "FROM submissions WHERE status = ?",
             (status,),
         ).fetchall()
