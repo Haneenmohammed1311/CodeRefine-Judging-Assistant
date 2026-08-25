@@ -107,6 +107,8 @@ Answer appears, question and answer are logged
 
 Each of the `src/` subfolders has its own README explaining what every file in it does read this one for the overall picture, then the folder-level ones when you're working on a specific piece.
 
+Committed architecture diagrams can be `.excalidraw`, PNG, JPG/JPEG, WebP, or PDF. The existing parser reads Excalidraw JSON; a separate vision model contributes factual observations for raster images and the first five PDF pages. SVG files and live external Figma/Excalidraw links remain visible to judges for manual review.
+
 
 
 ## Running it, step by step

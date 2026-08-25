@@ -20,9 +20,11 @@ from src.tools.github_tool import (
     find_submission_files,
     fetch_readme,
     fetch_file_content,
+    fetch_file_bytes,
     find_external_resource_links,
 )
 from src.tools.excalidraw_parser import parse_excalidraw
+from src.tools.diagram_reader import analyze_diagram_file
 
 # Defense-in-depth layer 2 against prompt injection (layer 1 is the
 # <submitted_content> delimiter + instruction in the gather prompt below).
@@ -60,13 +62,8 @@ def gather_node(state: GradingState) -> dict:
     evidence that wasn't actually found.
 
     Targets the known submission files (README, Deep Dives, BOTE,
-    .excalidraw) but also handles cases beyond what any single example
-    showed: a diagram committed as an image instead of .excalidraw, a
-    design doc as a PDF, or a link to an external tool other than
-    excalidraw.com (draw.io, Figma, Miro, a Google Doc, etc.) none of
-    these are read directly (no vision model, no PDF parsing wired in
-    yet), but all are detected and flagged for the judge rather than
-    silently missed.
+    .excalidraw) and adds factual vision observations for repository
+    images and PDFs. External diagram links remain judge-reviewed material.
     """
     repo_url = state["repo_url"]
 
@@ -85,6 +82,7 @@ def gather_node(state: GradingState) -> dict:
                     "line_range": "N/A",
                     "excerpt": "",
                     "observation": f"Could not access repo: {e}",
+                    "source_type": "text",
                 }
             ],
         }
@@ -128,18 +126,10 @@ def gather_node(state: GradingState) -> dict:
             architecture_flags.append(
                 f"No .excalidraw file or external diagram link was found, "
                 f"but the repo contains image file(s) that may be a "
-                f"committed diagram: {', '.join(found_files['images'])} -- "
-                f"this agent cannot read image content. The judge should view these directly to "
-                f"evaluate High-Level Architecture."
+                f"committed diagram: {', '.join(found_files['images'])}. "
+                f"These files will be analysed for factual visual evidence; "
+                f"the judge should still review them directly when needed."
             )
-
-    if found_files["pdfs"]:
-        architecture_flags.append(
-            f"The repo contains PDF file(s) that were not read (no PDF "
-            f"parsing configured): {', '.join(found_files['pdfs'])} these "
-            f"may contain relevant design content the judge should check "
-            f"manually."
-        )
 
     architecture_note = "\n".join(architecture_flags)
 
@@ -172,6 +162,7 @@ def gather_node(state: GradingState) -> dict:
                         "template, or the wrong repo link the judge should verify "
                         "this is the correct submission before proceeding."
                     ),
+                    "source_type": "text",
                 }
             ],
         }
@@ -241,6 +232,7 @@ diagram content), excerpt (a short quote or description), and observation
                 "line_range": "N/A",
                 "excerpt": "",
                 "observation": "Could not parse gather-step output as JSON.",
+                "source_type": "text",
             }
         ]
 
@@ -259,7 +251,24 @@ diagram content), excerpt (a short quote or description), and observation
                 "The agent did not act on it, but the judge should review "
                 "this submission manually."
             ),
+            "source_type": "text",
         })
+
+    # Images and PDFs committed to the repository are analysed separately
+    # from the text LLM. Their factual observations are appended as evidence;
+    # format_node and verify_node continue unchanged.
+    for diagram_path in [*found_files["images"], *found_files["pdfs"]]:
+        try:
+            diagram_bytes = fetch_file_bytes(repo_url, diagram_path)
+            raw_notes.extend(analyze_diagram_file(diagram_path, diagram_bytes))
+        except Exception as e:
+            raw_notes.append({
+                "file_path": diagram_path,
+                "line_range": "N/A",
+                "excerpt": "",
+                "observation": f"Could not analyse committed diagram file: {e}",
+                "source_type": "pdf" if diagram_path.lower().endswith(".pdf") else "image",
+            })
 
     # Assign each note a stable numeric id, regardless of what the LLM
     # returned. This is what lets format_node cite evidence by ID instead
@@ -268,6 +277,7 @@ diagram content), excerpt (a short quote or description), and observation
     # correct evidence as "not grounded."
     for i, note in enumerate(raw_notes):
         note["id"] = i
+        note.setdefault("source_type", "text")
 
     return {
         "file_tree": list(found_files.values()),

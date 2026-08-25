@@ -14,6 +14,7 @@ class CriterionEvidence(TypedDict):
     line_range: str   # "22-45"
     excerpt: str      # short excerpt supporting the observation
     observation: str  # what this evidence shows, in plain language
+    source_type: str  # "text" | "excalidraw" | "image" | "pdf"
 
 
 class CriterionScorecard(TypedDict):

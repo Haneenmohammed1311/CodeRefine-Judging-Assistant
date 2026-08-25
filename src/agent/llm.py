@@ -8,9 +8,11 @@ import os
 from langchain_groq import ChatGroq
 
 MODEL_NAME = "openai/gpt-oss-120b"
+VISION_MODEL_NAME = "qwen/qwen3.6-27b"
 
 
 _llm_cache: dict[tuple[float, bool], ChatGroq] = {}
+_vision_llm_cache: dict[tuple[float, bool], ChatGroq] = {}
 
 
 def get_llm(temperature: float = 0.0, json_mode: bool = False) -> ChatGroq:
@@ -31,4 +33,21 @@ def get_llm(temperature: float = 0.0, json_mode: bool = False) -> ChatGroq:
     if json_mode:
         llm = llm.bind(response_format={"type": "json_object"})
     _llm_cache[cache_key] = llm
+    return llm
+
+
+def get_vision_llm(temperature: float = 0.0, json_mode: bool = False) -> ChatGroq:
+    """Returns the separate Groq vision client used only for repository diagrams."""
+    cache_key = (temperature, json_mode)
+    if cache_key in _vision_llm_cache:
+        return _vision_llm_cache[cache_key]
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise EnvironmentError("GROQ_API_KEY is not set.")
+
+    llm = ChatGroq(model=VISION_MODEL_NAME, temperature=temperature, api_key=api_key)
+    if json_mode:
+        llm = llm.bind(response_format={"type": "json_object"})
+    _vision_llm_cache[cache_key] = llm
     return llm

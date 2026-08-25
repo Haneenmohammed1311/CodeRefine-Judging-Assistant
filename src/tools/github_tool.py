@@ -143,6 +143,16 @@ def fetch_file_content(repo_url: str, file_path: str) -> str:
     return file_content.decoded_content.decode("utf-8", errors="replace")
 
 
+def fetch_file_bytes(repo_url: str, file_path: str) -> bytes:
+    """Returns the original bytes of one repository file for image/PDF analysis."""
+    repo_name = _repo_name_from_url(repo_url)
+    client = _get_client()
+    repo = client.get_repo(repo_name)
+
+    file_content = repo.get_contents(file_path)
+    return file_content.decoded_content
+
+
 def _repo_name_from_url(repo_url: str) -> str:
     """Turns 'https://github.com/owner/repo' into 'owner/repo' for PyGithub."""
     cleaned = repo_url.rstrip("/").removesuffix(".git")
