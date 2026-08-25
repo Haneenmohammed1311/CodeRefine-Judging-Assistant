@@ -139,7 +139,7 @@ def get(team_name: str) -> dict | None:
     finally:
         conn.close()
 
-def approve(team_name: str, judge_notes: str = "", edited_scorecard: list | None = None) -> dict:
+def approve(team_name: str, judge_notes: str = "", edited_scorecard: list | None = None, bonus_percent: int = 0) -> dict:
 
     """
     A judge approves a team's scorecard, moving it to 'approved'. The judge
