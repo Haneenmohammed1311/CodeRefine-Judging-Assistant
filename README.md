@@ -4,6 +4,10 @@ A grading assistant and support chatbot for CodeRefine's system-design track. Te
 
 Nothing here auto-publishes a score. The agent drafts, a human decides.
 
+
+https://github.com/user-attachments/assets/36365991-89de-4b57-8905-1e3bb00e6eb6
+
+
 ## How it fits together
 
 ```
