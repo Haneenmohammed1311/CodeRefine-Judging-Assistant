@@ -7,7 +7,10 @@ Nothing here auto-publishes a score. The agent drafts, a human decides.
 [Code Refine Platform](https://coderefine.ieeemansb.org/)
 
 
-https://github.com/user-attachments/assets/36365991-89de-4b57-8905-1e3bb00e6eb6
+
+https://github.com/user-attachments/assets/5379145b-cbde-4658-8d42-20224932d924
+
+
 
 
 ## How it fits together
